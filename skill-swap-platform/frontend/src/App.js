@@ -1,8 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import Navbar from './components/Navbar';
+import AppLayout from './components/Layout/AppLayout';
 import PrivateRoute from './components/PrivateRoute';
+import ErrorBoundary from './components/UI/ErrorBoundary';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -10,15 +11,13 @@ import BrowsePage from './pages/BrowsePage';
 import RequestsPage from './pages/RequestsPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
-import './App.css';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="App">
-          <Navbar />
-          <main className="main-content">
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <AppLayout>
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
@@ -57,10 +56,10 @@ function App() {
               />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </main>
-        </div>
-      </Router>
-    </AuthProvider>
+          </AppLayout>
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
