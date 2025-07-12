@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
-  const { user, api } = useAuth();
+  const { user, api, updateUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,8 +44,12 @@ const ProfilePage = () => {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.put('/api/profile', profile);
-      setProfile(response.data);
+      const response = await api.put('/api/profile', {
+        name: profile.name,
+        bio: profile.bio
+      });
+      setProfile(response.data.user);
+      updateUser(response.data.user);
       setEditing(false);
       alert('Profile updated successfully!');
     } catch (err) {
@@ -116,9 +120,10 @@ const ProfilePage = () => {
               <input
                 type="email"
                 value={profile?.email || ''}
-                onChange={(e) => setProfile({...profile, email: e.target.value})}
-                required
+                disabled
+                style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
               />
+              <small style={{ color: '#666' }}>Email cannot be changed</small>
             </div>
             <div className="form-group">
               <label>Bio</label>
@@ -126,6 +131,7 @@ const ProfilePage = () => {
                 value={profile?.bio || ''}
                 onChange={(e) => setProfile({...profile, bio: e.target.value})}
                 rows="4"
+                placeholder="Tell us about yourself..."
               />
             </div>
             <button type="submit" className="btn btn-success">Save Changes</button>
@@ -135,13 +141,14 @@ const ProfilePage = () => {
             <p><strong>Name:</strong> {profile?.name}</p>
             <p><strong>Email:</strong> {profile?.email}</p>
             <p><strong>Bio:</strong> {profile?.bio || 'No bio added yet.'}</p>
-            <p><strong>Member since:</strong> {new Date(profile?.createdAt).toLocaleDateString()}</p>
+            <p><strong>Role:</strong> {profile?.role}</p>
+            <p><strong>Member since:</strong> {new Date(profile?.created_at).toLocaleDateString()}</p>
           </div>
         )}
       </div>
 
       <div className="skills-section">
-        <h2>My Skills</h2>
+        <h2>My Skills ({skills.length})</h2>
         
         <form onSubmit={handleAddSkill} className="add-skill-form">
           <h3>Add New Skill</h3>
@@ -152,6 +159,7 @@ const ProfilePage = () => {
                 type="text"
                 value={newSkill.name}
                 onChange={(e) => setNewSkill({...newSkill, name: e.target.value})}
+                placeholder="e.g., JavaScript Programming"
                 required
               />
             </div>
@@ -189,6 +197,7 @@ const ProfilePage = () => {
               value={newSkill.description}
               onChange={(e) => setNewSkill({...newSkill, description: e.target.value})}
               rows="3"
+              placeholder="Describe what you can teach and your experience..."
               required
             />
           </div>
@@ -197,7 +206,7 @@ const ProfilePage = () => {
 
         <div className="skills-list">
           {skills.length === 0 ? (
-            <p className="no-skills">No skills added yet.</p>
+            <p className="no-skills">No skills added yet. Add your first skill above!</p>
           ) : (
             skills.map(skill => (
               <div key={skill.id} className="skill-item">
@@ -207,6 +216,7 @@ const ProfilePage = () => {
                   <div className="skill-meta">
                     <span className="skill-category">{skill.category}</span>
                     <span className="skill-level">Level: {skill.level}</span>
+                    <span className="skill-date">Added: {new Date(skill.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
                 <button

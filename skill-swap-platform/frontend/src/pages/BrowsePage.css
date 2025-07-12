@@ -13,7 +13,7 @@
 .filters {
   display: flex;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -32,6 +32,12 @@
 
 .category-select {
   min-width: 150px;
+}
+
+.results-info {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #666;
 }
 
 .skills-grid {
@@ -69,6 +75,8 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .skill-category,
@@ -83,6 +91,19 @@
 .skill-owner {
   margin-bottom: 1rem;
   color: #666;
+}
+
+.owner-bio {
+  font-style: italic;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  color: #888;
+}
+
+.skill-date {
+  font-size: 0.875rem;
+  color: #888;
+  margin-bottom: 1rem;
 }
 
 .request-btn {
@@ -117,6 +138,11 @@
   color: #666;
 }
 
+.no-results h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
 @media (max-width: 768px) {
   .browse-page {
     padding: 1rem;
@@ -136,4 +162,4 @@
   .skills-grid {
     grid-template-columns: 1fr;
   }
-} 
+}

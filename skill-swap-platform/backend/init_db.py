@@ -1,26 +1,27 @@
-from app import app, db, User, Skill, bcrypt
+from app import app, db, User, Skill, Request
 from datetime import datetime
 
 def init_database():
     with app.app_context():
+        # Drop all tables and recreate them
+        print("🔄 Dropping existing tables...")
+        db.drop_all()
+        
         # Create all tables
+        print("🔧 Creating database tables...")
         db.create_all()
         
         # Create admin user
         admin_email = 'admin@skillswap.com'
-        admin = User.query.filter_by(email=admin_email).first()
-        
-        if not admin:
-            password_hash = bcrypt.generate_password_hash('admin123').decode('utf-8')
-            admin = User(
-                name='Admin',
-                email=admin_email,
-                password_hash=password_hash,
-                role='admin',
-                bio='System Administrator'
-            )
-            db.session.add(admin)
-            print("✅ Admin user created: admin@skillswap.com / admin123")
+        admin = User(
+            name='Admin',
+            email=admin_email,
+            role='admin',
+            bio='System Administrator'
+        )
+        admin.set_password('admin123')
+        db.session.add(admin)
+        print("✅ Admin user created: admin@skillswap.com / admin123")
         
         # Create sample users
         sample_users = [
@@ -44,18 +45,20 @@ def init_database():
             }
         ]
         
+        users = {}
         for user_data in sample_users:
-            existing_user = User.query.filter_by(email=user_data['email']).first()
-            if not existing_user:
-                password_hash = bcrypt.generate_password_hash(user_data['password']).decode('utf-8')
-                user = User(
-                    name=user_data['name'],
-                    email=user_data['email'],
-                    password_hash=password_hash,
-                    bio=user_data['bio']
-                )
-                db.session.add(user)
-                print(f"✅ User created: {user_data['email']} / {user_data['password']}")
+            user = User(
+                name=user_data['name'],
+                email=user_data['email'],
+                bio=user_data['bio']
+            )
+            user.set_password(user_data['password'])
+            db.session.add(user)
+            users[user_data['email']] = user
+            print(f"✅ User created: {user_data['email']} / {user_data['password']}")
+        
+        # Commit users first
+        db.session.commit()
         
         # Create sample skills
         sample_skills = [
@@ -103,33 +106,69 @@ def init_database():
             }
         ]
         
+        skills = {}
         for skill_data in sample_skills:
             owner = User.query.filter_by(email=skill_data['owner_email']).first()
             if owner:
-                existing_skill = Skill.query.filter_by(
+                skill = Skill(
                     name=skill_data['name'],
+                    description=skill_data['description'],
+                    category=skill_data['category'],
+                    level=skill_data['level'],
                     owner_id=owner.id
-                ).first()
-                
-                if not existing_skill:
-                    skill = Skill(
-                        name=skill_data['name'],
-                        description=skill_data['description'],
-                        category=skill_data['category'],
-                        level=skill_data['level'],
-                        owner_id=owner.id
-                    )
-                    db.session.add(skill)
-                    print(f"✅ Skill created: {skill_data['name']} by {owner.name}")
+                )
+                db.session.add(skill)
+                skills[skill_data['name']] = skill
+                print(f"✅ Skill created: {skill_data['name']} by {owner.name}")
         
-        # Commit all changes
+        # Commit skills
+        db.session.commit()
+        
+        # Create sample requests
+        sample_requests = [
+            {
+                'skill_name': 'React Development',
+                'requester_email': 'jane@example.com',
+                'message': 'I would love to learn React to improve my frontend skills!',
+                'status': 'pending'
+            },
+            {
+                'skill_name': 'UI/UX Design',
+                'requester_email': 'mike@example.com',
+                'message': 'I want to learn design principles for my music website.',
+                'status': 'accepted'
+            },
+            {
+                'skill_name': 'Guitar Lessons',
+                'requester_email': 'john@example.com',
+                'message': 'I have always wanted to learn guitar. Can you help?',
+                'status': 'pending'
+            }
+        ]
+        
+        for request_data in sample_requests:
+            skill = Skill.query.filter_by(name=request_data['skill_name']).first()
+            requester = User.query.filter_by(email=request_data['requester_email']).first()
+            
+            if skill and requester and skill.owner_id != requester.id:
+                request_obj = Request(
+                    skill_id=skill.id,
+                    requester_id=requester.id,
+                    message=request_data['message'],
+                    status=request_data['status']
+                )
+                db.session.add(request_obj)
+                print(f"✅ Request created: {requester.name} -> {skill.name}")
+        
+        # Final commit
         db.session.commit()
         print("\n🎉 Database initialized successfully!")
         print("\n📋 Sample Data Created:")
         print("- Admin user: admin@skillswap.com / admin123")
         print("- Sample users: john@example.com, jane@example.com, mike@example.com (password: password123)")
         print("- 6 sample skills across different categories")
+        print("- 3 sample requests")
         print("\n🚀 You can now start the backend server with: python app.py")
 
 if __name__ == '__main__':
-    init_database() 
+    init_database()

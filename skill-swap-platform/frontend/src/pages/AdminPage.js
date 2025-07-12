@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import './AdminPage.css';
 
 const AdminPage = () => {
-  const { api } = useAuth();
+  const { api, user } = useAuth();
   const [users, setUsers] = useState([]);
   const [skills, setSkills] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -12,8 +12,13 @@ const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('users');
 
   useEffect(() => {
+    if (user?.role !== 'admin') {
+      setError('Access denied. Admin privileges required.');
+      setLoading(false);
+      return;
+    }
     fetchData();
-  }, [activeTab]);
+  }, [activeTab, user]);
 
   const fetchData = async () => {
     try {
@@ -44,40 +49,24 @@ const AdminPage = () => {
   };
 
   const handleDeleteUser = async (userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+    if (window.confirm('Are you sure you want to delete this user? This will also delete all their skills and requests.')) {
       try {
         await api.delete(`/api/admin/users/${userId}`);
         fetchData();
         alert('User deleted successfully');
       } catch (err) {
-        alert('Failed to delete user');
+        alert(err.response?.data?.error || 'Failed to delete user');
       }
     }
   };
 
-  const handleDeleteSkill = async (skillId) => {
-    if (window.confirm('Are you sure you want to delete this skill?')) {
-      try {
-        await api.delete(`/api/admin/skills/${skillId}`);
-        fetchData();
-        alert('Skill deleted successfully');
-      } catch (err) {
-        alert('Failed to delete skill');
-      }
-    }
-  };
-
-  const handleDeleteRequest = async (requestId) => {
-    if (window.confirm('Are you sure you want to delete this request?')) {
-      try {
-        await api.delete(`/api/admin/requests/${requestId}`);
-        fetchData();
-        alert('Request deleted successfully');
-      } catch (err) {
-        alert('Failed to delete request');
-      }
-    }
-  };
+  if (user?.role !== 'admin') {
+    return (
+      <div className="admin-page">
+        <div className="error">Access denied. Admin privileges required.</div>
+      </div>
+    );
+  }
 
   if (loading) return <div className="loading">Loading admin data...</div>;
   if (error) return <div className="error">{error}</div>;
@@ -115,6 +104,7 @@ const AdminPage = () => {
               <table>
                 <thead>
                   <tr>
+                    <th>ID</th>
                     <th>Name</th>
                     <th>Email</th>
                     <th>Role</th>
@@ -123,23 +113,26 @@ const AdminPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(user => (
-                    <tr key={user.id}>
-                      <td>{user.name}</td>
-                      <td>{user.email}</td>
+                  {users.map(userItem => (
+                    <tr key={userItem.id}>
+                      <td>{userItem.id}</td>
+                      <td>{userItem.name}</td>
+                      <td>{userItem.email}</td>
                       <td>
-                        <span className={`role ${user.role}`}>
-                          {user.role}
+                        <span className={`role ${userItem.role}`}>
+                          {userItem.role}
                         </span>
                       </td>
-                      <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                      <td>{new Date(userItem.created_at).toLocaleDateString()}</td>
                       <td>
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="btn btn-danger"
-                        >
-                          Delete
-                        </button>
+                        {userItem.id !== user.id && (
+                          <button
+                            onClick={() => handleDeleteUser(userItem.id)}
+                            className="btn btn-danger"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -156,28 +149,23 @@ const AdminPage = () => {
               <table>
                 <thead>
                   <tr>
+                    <th>ID</th>
                     <th>Name</th>
                     <th>Category</th>
                     <th>Level</th>
                     <th>Owner</th>
-                    <th>Actions</th>
+                    <th>Created</th>
                   </tr>
                 </thead>
                 <tbody>
                   {skills.map(skill => (
                     <tr key={skill.id}>
+                      <td>{skill.id}</td>
                       <td>{skill.name}</td>
                       <td>{skill.category}</td>
                       <td>{skill.level}</td>
                       <td>{skill.owner?.name}</td>
-                      <td>
-                        <button
-                          onClick={() => handleDeleteSkill(skill.id)}
-                          className="btn btn-danger"
-                        >
-                          Delete
-                        </button>
-                      </td>
+                      <td>{new Date(skill.created_at).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -193,17 +181,18 @@ const AdminPage = () => {
               <table>
                 <thead>
                   <tr>
+                    <th>ID</th>
                     <th>Skill</th>
                     <th>Requester</th>
                     <th>Owner</th>
                     <th>Status</th>
                     <th>Date</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {requests.map(request => (
                     <tr key={request.id}>
+                      <td>{request.id}</td>
                       <td>{request.skill?.name}</td>
                       <td>{request.requester?.name}</td>
                       <td>{request.skill?.owner?.name}</td>
@@ -212,15 +201,7 @@ const AdminPage = () => {
                           {request.status}
                         </span>
                       </td>
-                      <td>{new Date(request.createdAt).toLocaleDateString()}</td>
-                      <td>
-                        <button
-                          onClick={() => handleDeleteRequest(request.id)}
-                          className="btn btn-danger"
-                        >
-                          Delete
-                        </button>
-                      </td>
+                      <td>{new Date(request.created_at).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>

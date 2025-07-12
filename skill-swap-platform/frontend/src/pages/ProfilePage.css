@@ -117,15 +117,22 @@
 .skill-meta {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .skill-category,
-.skill-level {
+.skill-level,
+.skill-date {
   background: #ecf0f1;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.875rem;
   color: #2c3e50;
+}
+
+.skill-date {
+  background: #e8f5e8;
+  color: #2d5a2d;
 }
 
 .btn {
@@ -200,4 +207,4 @@
     align-items: flex-start;
     gap: 1rem;
   }
-} 
+}

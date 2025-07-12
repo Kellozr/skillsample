@@ -31,6 +31,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -52,19 +53,34 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if user is logged in on app start
     const token = localStorage.getItem('token');
-    if (token) {
-      // Verify token by making a request to get profile
-      api.get('/api/profile')
-        .then(response => {
-          setUser({ ...response.data, token });
-        })
-        .catch((error) => {
-          console.error('Token verification failed:', error);
-          localStorage.removeItem('token');
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+    const savedUser = localStorage.getItem('user');
+    
+    if (token && savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setUser({ ...userData, token });
+        
+        // Verify token by making a request to get profile
+        api.get('/api/profile')
+          .then(response => {
+            setUser({ ...response.data, token });
+            localStorage.setItem('user', JSON.stringify(response.data));
+          })
+          .catch((error) => {
+            console.error('Token verification failed:', error);
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setUser(null);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      } catch (error) {
+        console.error('Error parsing saved user:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setLoading(false);
+      }
     } else {
       setLoading(false);
     }
@@ -77,9 +93,10 @@ export const AuthProvider = ({ children }) => {
         password
       });
       
-      const { token, user: userData } = response.data;
-      localStorage.setItem('token', token);
-      setUser({ ...userData, token });
+      const { access_token, user: userData } = response.data;
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser({ ...userData, token: access_token });
       return response.data;
     } catch (error) {
       console.error('Login error:', error);
@@ -87,17 +104,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (email, password, name) => {
+  const register = async (email, password, name, bio = '') => {
     try {
       const response = await api.post('/api/auth/register', {
         email,
         password,
-        name
+        name,
+        bio
       });
       
-      const { token, user: userData } = response.data;
-      localStorage.setItem('token', token);
-      setUser({ ...userData, token });
+      const { access_token, user: userData } = response.data;
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser({ ...userData, token: access_token });
       return response.data;
     } catch (error) {
       console.error('Register error:', error);
@@ -107,7 +126,13 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
+  };
+
+  const updateUser = (userData) => {
+    setUser({ ...userData, token: user?.token });
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const value = {
@@ -115,6 +140,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateUser,
     loading,
     api // Export the configured axios instance
   };
@@ -124,4 +150,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-}; 
+};
